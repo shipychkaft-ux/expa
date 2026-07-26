@@ -57,6 +57,7 @@ local playersHandler = Mana.PlayersHandler
 local toolHandler = Mana.ToolHandler
 local espLibrary = Mana.EspLibrary
 local guifont = GuiLibrary.Font
+local HUDLibrary = Mana.HUDLibrary
 Mana.StartTick = startTick
 
 playersHandler:start()
@@ -112,7 +113,7 @@ local function GetCustomAsset(path)
                 textlabel:Remove()
             end)
             local req = requestfunc({
-                Url = "https://raw.githubusercontent.com/Maanaaaa/ManaV2ForRoblox/main/" .. path:gsub("Mana/Assets", "Assets"),
+                Url = "https://raw.githubusercontent.com/shipychkaft-ux/expa/main/" .. path:gsub("Mana/Assets", "Assets"),
                 Method = "GET"
             })
             writefile(path, req.Body)
@@ -295,7 +296,7 @@ local function ConvertHealthToColor(Health, MaxHealth)
 end
 
 local function getCharacter(plr)
-    plr = plr or lplr
+    plr = plr or LocalPlayer
     return plr.Character or plr.CharacterAdded:Wait()
 end
 
@@ -308,21 +309,21 @@ local function getPlrByCharacter(character)
 end
 
 local function getHumanoid(plr)
-    plr = plr or lplr
+    plr = plr or LocalPlayer
     if isAlive(plr) then
         return getCharacter(plr):FindFirstChildOfClass("Humanoid")
     end
 end
 
 local function getHumanoidRootPart(plr)
-    plr = plr or lplr
+    plr = plr or LocalPlayer
     if isAlive(plr) then
         return getCharacter(plr):FindFirstChild("HumanoidRootPart")
     end
 end
 
 local function getHead(plr)
-    plr = plr or lplr
+    plr = plr or LocalPlayer
     if isAlive(plr) then
         return getCharacter(plr):FindFirstChild("Head")
     end
@@ -5010,6 +5011,54 @@ runFunction(function()
         Round = 0
     })
 end)
+
+-- // HUD features (ported from expensiv_3_1)
+if HUDLibrary then
+    runFunction(function()
+        local watermark = {Enabled = false}
+        watermark = Tabs.Render:CreateToggle({
+            Name = "Watermark",
+            HoverText = "Shows a watermark with ping and FPS.",
+            Callback = function(callback)
+                if callback then
+                    HUDLibrary:createWatermark(GuiLibrary.ScreenGui).setVisible(true)
+                else
+                    if HUDLibrary.watermark then HUDLibrary.watermark.setVisible(false) end
+                end
+            end
+        })
+    end)
+
+    runFunction(function()
+        local targetHud = {Enabled = false}
+        targetHud = Tabs.Render:CreateToggle({
+            Name = "TargetHud",
+            HoverText = "Shows info about the closest player.",
+            Callback = function(callback)
+                if callback then
+                    HUDLibrary:createTargetHud(GuiLibrary.ScreenGui).setVisible(true)
+                else
+                    if HUDLibrary.targetHud then HUDLibrary.targetHud.setVisible(false) end
+                end
+            end
+        })
+    end)
+
+    runFunction(function()
+        local ambience = {Enabled = false}
+        ambience = Tabs.Render:CreateToggle({
+            Name = "Ambience",
+            HoverText = "Full-screen animated color overlay.",
+            Callback = function(callback)
+                if callback then
+                    HUDLibrary:createAmbience(GuiLibrary.ScreenGui).setVisible(true)
+                else
+                    if HUDLibrary.ambience then HUDLibrary.ambience.setVisible(false) end
+                end
+            end
+        })
+    end)
+end
 
 print("[ManaV2ForRoblox/Universal.lua]: Loaded in " .. tostring(tick() - startTick) .. ".")
 task.spawn(function()
