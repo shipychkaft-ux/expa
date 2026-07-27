@@ -1,11 +1,20 @@
 local repo = "https://raw.githubusercontent.com/shipychkaft-ux/expa/main/"
 
 local function get(path)
-    return game:HttpGet(repo .. path, true)
+    local url = repo .. path
+    local src = game:HttpGet(url, true)
+    if not src or src == "" then
+        error("Failed to fetch (empty): " .. url)
+    end
+    return src
 end
 
 local function run(src)
-    return loadstring(src)()
+    local fn, err = loadstring(src)
+    if not fn then
+        error("loadstring error: " .. tostring(err) .. " | src starts with: " .. src:sub(1, 100))
+    end
+    return fn()
 end
 
 -- Init shared.Mana
