@@ -12,6 +12,7 @@ local Mouse = LocalPlayer:GetMouse()
 local Tabs = {}
 local Keybinds = {}
 local keybindListening = false
+local functionKeybinds = {}
 
 local theme = {
     bg = Color3.fromRGB(14, 14, 23),
@@ -53,16 +54,22 @@ local guilibrary = {
 function guilibrary:CreateWindow(config)
     config = config or {}
 
+    local menuWidth = 650
+    local menuHeight = 520
+    local sidebarWidth = 140
+    local settingsWidth = 240
+
+    -- Main frame
     local frame = Instance.new("Frame")
     frame.Name = "Window"
-    frame.Size = UDim2.new(0, 740, 0, 500)
-    frame.Position = UDim2.new(0.5, -370, 0.5, -250)
+    frame.Size = UDim2.new(0, menuWidth, 0, menuHeight)
+    frame.Position = UDim2.new(0.5, -menuWidth / 2, 0.5, -menuHeight / 2)
     frame.BackgroundColor3 = theme.bg
     frame.BorderSizePixel = 0
     frame.Parent = ScreenGui
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = frame
 
     local stroke = Instance.new("UIStroke")
@@ -100,7 +107,6 @@ function guilibrary:CreateWindow(config)
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.Parent = titleBar
 
-    -- Close button
     local closeBtn = Instance.new("TextButton")
     closeBtn.Size = UDim2.new(0, 28, 0, 28)
     closeBtn.Position = UDim2.new(1, -34, 0.5, -14)
@@ -150,7 +156,7 @@ function guilibrary:CreateWindow(config)
     -- Sidebar
     local sidebar = Instance.new("Frame")
     sidebar.Name = "Sidebar"
-    sidebar.Size = UDim2.new(0, 155, 1, -35)
+    sidebar.Size = UDim2.new(0, sidebarWidth, 1, -35)
     sidebar.Position = UDim2.new(0, 0, 0, 35)
     sidebar.BackgroundColor3 = theme.section
     sidebar.BorderSizePixel = 0
@@ -162,36 +168,6 @@ function guilibrary:CreateWindow(config)
     sidebarStroke.Sides = { Enum.NormalId.Right }
     sidebarStroke.Parent = sidebar
 
-    -- Page container
-    local pageContainer = Instance.new("Frame")
-    pageContainer.Name = "PageContainer"
-    pageContainer.Size = UDim2.new(1, -155, 1, -35)
-    pageContainer.Position = UDim2.new(0, 155, 0, 35)
-    pageContainer.BackgroundTransparency = 1
-    pageContainer.ClipsDescendants = true
-    pageContainer.Parent = frame
-
-    -- Search bar
-    local searchBox = Instance.new("TextBox")
-    searchBox.Name = "Search"
-    searchBox.Size = UDim2.new(1, -16, 0, 28)
-    searchBox.Position = UDim2.new(0, 8, 0, 6)
-    searchBox.BackgroundColor3 = theme.element
-    searchBox.PlaceholderText = "Search..."
-    searchBox.PlaceholderColor3 = theme.textDim
-    searchBox.Text = ""
-    searchBox.TextColor3 = theme.text
-    searchBox.Font = theme.font
-    searchBox.TextSize = 12
-    searchBox.ClearTextOnFocus = false
-    searchBox.BorderSizePixel = 0
-    searchBox.Parent = sidebar
-
-    local searchCorner = Instance.new("UICorner")
-    searchCorner.CornerRadius = UDim.new(0, 4)
-    searchCorner.Parent = searchBox
-
-    -- Sidebar buttons layout
     local sidebarLayout = Instance.new("UIListLayout")
     sidebarLayout.Padding = UDim.new(0, 4)
     sidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -200,22 +176,219 @@ function guilibrary:CreateWindow(config)
     local sidebarPadding = Instance.new("UIPadding")
     sidebarPadding.PaddingLeft = UDim.new(0, 8)
     sidebarPadding.PaddingRight = UDim.new(0, 8)
-    sidebarPadding.PaddingTop = UDim.new(0, 40)
+    sidebarPadding.PaddingTop = UDim.new(0, 12)
     sidebarPadding.Parent = sidebar
 
+    -- Content area
+    local contentArea = Instance.new("Frame")
+    contentArea.Name = "ContentArea"
+    contentArea.Size = UDim2.new(1, -sidebarWidth, 1, -35)
+    contentArea.Position = UDim2.new(0, sidebarWidth, 0, 35)
+    contentArea.BackgroundTransparency = 1
+    contentArea.ClipsDescendants = true
+    contentArea.Parent = frame
+
+    -- Settings panel (outside main frame, positioned to the right)
+    local settingsPanel = Instance.new("Frame")
+    settingsPanel.Name = "SettingsPanel"
+    settingsPanel.Size = UDim2.new(0, settingsWidth, 0, 0)
+    settingsPanel.Position = UDim2.new(0, menuWidth + 6, 0, 0)
+    settingsPanel.BackgroundColor3 = theme.section
+    settingsPanel.BorderSizePixel = 0
+    settingsPanel.Visible = false
+    settingsPanel.ZIndex = 10
+    settingsPanel.Parent = frame
+
+    local settingsCorner = Instance.new("UICorner")
+    settingsCorner.CornerRadius = UDim.new(0, 8)
+    settingsCorner.Parent = settingsPanel
+
+    local settingsStroke = Instance.new("UIStroke")
+    settingsStroke.Color = theme.border
+    settingsStroke.Thickness = 1
+    settingsStroke.Parent = settingsPanel
+
+    -- Settings title
+    local settingsTitle = Instance.new("TextLabel")
+    settingsTitle.Name = "SettingsTitle"
+    settingsTitle.Size = UDim2.new(1, -20, 0, 32)
+    settingsTitle.Position = UDim2.new(0, 10, 0, 8)
+    settingsTitle.BackgroundTransparency = 1
+    settingsTitle.Text = ""
+    settingsTitle.TextColor3 = theme.text
+    settingsTitle.Font = theme.font
+    settingsTitle.TextSize = 16
+    settingsTitle.TextXAlignment = Enum.TextXAlignment.Left
+    settingsTitle.Parent = settingsPanel
+
+    -- Settings close button
+    local settingsClose = Instance.new("TextButton")
+    settingsClose.Name = "SettingsClose"
+    settingsClose.Size = UDim2.new(0, 22, 0, 22)
+    settingsClose.Position = UDim2.new(1, -28, 0, 8)
+    settingsClose.BackgroundColor3 = theme.danger
+    settingsClose.Text = "X"
+    settingsClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+    settingsClose.TextSize = 12
+    settingsClose.Font = theme.font
+    settingsClose.BorderSizePixel = 0
+    settingsClose.AutoButtonColor = false
+    settingsClose.ZIndex = 11
+    settingsClose.Parent = settingsPanel
+
+    local settingsCloseCorner = Instance.new("UICorner")
+    settingsCloseCorner.CornerRadius = UDim.new(0, 4)
+    settingsCloseCorner.Parent = settingsClose
+
+    -- Settings keybind section
+    local keybindLabel = Instance.new("TextLabel")
+    keybindLabel.Name = "KeybindLabel"
+    keybindLabel.Size = UDim2.new(1, -20, 0, 20)
+    keybindLabel.Position = UDim2.new(0, 10, 0, 44)
+    keybindLabel.BackgroundTransparency = 1
+    keybindLabel.Text = "Keybind"
+    keybindLabel.TextColor3 = theme.textDim
+    keybindLabel.Font = theme.font
+    keybindLabel.TextSize = 12
+    keybindLabel.TextXAlignment = Enum.TextXAlignment.Left
+    keybindLabel.Parent = settingsPanel
+
+    local keybindBtn = Instance.new("TextButton")
+    keybindBtn.Name = "KeybindBtn"
+    keybindBtn.Size = UDim2.new(1, -20, 0, 30)
+    keybindBtn.Position = UDim2.new(0, 10, 0, 66)
+    keybindBtn.BackgroundColor3 = theme.element
+    keybindBtn.Text = "None"
+    keybindBtn.TextColor3 = theme.text
+    keybindBtn.Font = theme.font
+    keybindBtn.TextSize = 13
+    keybindBtn.BorderSizePixel = 0
+    keybindBtn.AutoButtonColor = false
+    keybindBtn.ZIndex = 11
+    keybindBtn.Parent = settingsPanel
+
+    local keybindCorner = Instance.new("UICorner")
+    keybindCorner.CornerRadius = UDim.new(0, 4)
+    keybindCorner.Parent = keybindBtn
+
+    -- Settings options container (for child dropdowns/sliders/toggles)
+    local settingsOptions = Instance.new("Frame")
+    settingsOptions.Name = "SettingsOptions"
+    settingsOptions.Size = UDim2.new(1, 0, 0, 0)
+    settingsOptions.Position = UDim2.new(0, 0, 0, 104)
+    settingsOptions.BackgroundTransparency = 1
+    settingsOptions.ZIndex = 11
+    settingsOptions.Parent = settingsPanel
+
+    local settingsOptionsLayout = Instance.new("UIListLayout")
+    settingsOptionsLayout.Padding = UDim.new(0, 6)
+    settingsOptionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    settingsOptionsLayout.Parent = settingsOptions
+
+    local settingsOptionsPadding = Instance.new("UIPadding")
+    settingsOptionsPadding.PaddingLeft = UDim.new(0, 10)
+    settingsOptionsPadding.PaddingRight = UDim.new(0, 10)
+    settingsOptionsPadding.Parent = settingsOptions
+
+    -- Divider between keybind and options
+    local settingsDivider = Instance.new("Frame")
+    settingsDivider.Name = "SettingsDivider"
+    settingsDivider.Size = UDim2.new(1, -20, 0, 1)
+    settingsDivider.Position = UDim2.new(0, 10, 0, 102)
+    settingsDivider.BackgroundColor3 = theme.border
+    settingsDivider.BorderSizePixel = 0
+    settingsDivider.Parent = settingsPanel
+
+    -- Track current toggle whose settings are shown
+    local currentSettingsToggle = nil
+    local currentOptionsContainer = nil
+
+    local function closeSettings()
+        settingsPanel.Visible = false
+        if currentOptionsContainer then
+            currentOptionsContainer.Parent = currentSettingsToggle._hiddenContainer
+            currentOptionsContainer = nil
+        end
+        currentSettingsToggle = nil
+    end
+
+    settingsClose.MouseButton1Click:Connect(closeSettings)
+
+    local function openSettings(toggleAPI)
+        if currentSettingsToggle == toggleAPI then return end
+
+        -- Close previous settings
+        closeSettings()
+
+        -- Set up new settings
+        currentSettingsToggle = toggleAPI
+        settingsTitle.Text = toggleAPI.Name
+
+        -- Keybind
+        local bindName = toggleAPI._keybind and toggleAPI._keybind.Name or "None"
+        keybindBtn.Text = bindName
+        keybindBtn._toggleAPI = toggleAPI
+
+        -- Move option container into settings panel
+        local container = toggleAPI._hiddenContainer
+        if container then
+            currentOptionsContainer = container
+            container.Parent = settingsOptions
+        end
+
+        -- Update panel size
+        local optionsHeight = settingsOptionsLayout.AbsoluteContentSize.Y
+        local totalH = math.max(108 + optionsHeight + 12, 120)
+        settingsPanel.Size = UDim2.new(0, settingsWidth, 0, totalH)
+
+        -- Position settings panel relative to main frame
+        local framePos = frame.Position
+        local xOff = framePos.X.Offset + menuWidth + 6
+        local yOff = framePos.Y.Offset
+        settingsPanel.Position = UDim2.new(framePos.X.Scale, xOff, framePos.Y.Scale, yOff)
+
+        settingsPanel.Visible = true
+    end
+
+    guilibrary._openSettings = openSettings
+
+    -- Keybind button logic
+    keybindBtn.MouseButton1Click:Connect(function()
+        local toggleAPI = keybindBtn._toggleAPI
+        if toggleAPI then
+            if toggleAPI._keybind then
+                functionKeybinds[toggleAPI] = nil
+                toggleAPI._keybind = nil
+                keybindBtn.Text = "None"
+                guilibrary:CreateNotification("Keybind", toggleAPI.Name .. " keybind removed")
+            else
+                keybindBtn.Text = "..."
+                keybindListening = true
+            end
+        end
+    end)
+
+    -- Position settings panel when frame moves
+    RunService.RenderStepped:Connect(function()
+        if settingsPanel.Visible and frame then
+            local framePos = frame.Position
+            settingsPanel.Position = UDim2.new(
+                framePos.X.Scale, framePos.X.Offset + menuWidth + 6,
+                framePos.Y.Scale, framePos.Y.Offset
+            )
+        end
+    end)
+
+    -- Pages tracking
     local pages = {}
     local currentPage = nil
 
-    -- Search filtering
-    local allToggleFrames = {}
-    searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-        local query = searchBox.Text:lower()
-        for _, toggleFrame in ipairs(allToggleFrames) do
-            local label = toggleFrame:FindFirstChildOfClass("TextLabel")
-            if label then
-                local match = query == "" or label.Text:lower():find(query, 1, true)
-                toggleFrame.Visible = match
-            end
+    -- Auto-size settings panel when options change
+    settingsOptionsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        if settingsPanel.Visible then
+            local optionsHeight = settingsOptionsLayout.AbsoluteContentSize.Y
+            local totalH = math.max(108 + optionsHeight + 12, 120)
+            settingsPanel.Size = UDim2.new(0, settingsWidth, 0, totalH)
         end
     end)
 
@@ -225,25 +398,49 @@ function guilibrary:CreateWindow(config)
         config = config or {}
         local name = config.Name or "Tab"
 
-        local tabFrame = Instance.new("ScrollingFrame")
-        tabFrame.Name = name
-        tabFrame.Size = UDim2.new(1, -8, 1, -8)
-        tabFrame.Position = UDim2.new(0, 4, 0, 4)
-        tabFrame.BackgroundTransparency = 1
-        tabFrame.BorderSizePixel = 0
-        tabFrame.ScrollBarThickness = 3
-        tabFrame.ScrollBarImageColor3 = theme.element
-        tabFrame.Visible = false
-        tabFrame.Parent = pageContainer
+        -- Grid container inside content area
+        local gridContainer = Instance.new("ScrollingFrame")
+        gridContainer.Name = name
+        gridContainer.Size = UDim2.new(1, -12, 1, -12)
+        gridContainer.Position = UDim2.new(0, 6, 0, 6)
+        gridContainer.BackgroundTransparency = 1
+        gridContainer.BorderSizePixel = 0
+        gridContainer.ScrollBarThickness = 4
+        gridContainer.ScrollBarImageColor3 = theme.element
+        gridContainer.Visible = false
+        gridContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+        gridContainer.Parent = contentArea
 
-        local tabLayout = Instance.new("UIListLayout")
-        tabLayout.Padding = UDim.new(0, 8)
-        tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        tabLayout.Parent = tabFrame
+        local gridLayout = Instance.new("UIGridLayout")
+        gridLayout.FillDirection = Enum.FillDirection.Horizontal
+        gridLayout.FillDirectionMaxCells = 3
+        gridLayout.CellPadding = UDim2.new(0, 8, 0, 8)
+        gridLayout.CellSize = UDim2.new(0, 180, 0, 80)
+        gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        gridLayout.Parent = gridContainer
 
-        local tabPadding = Instance.new("UIPadding")
-        tabPadding.PaddingBottom = UDim.new(0, 24)
-        tabPadding.Parent = tabFrame
+        local gridPadding = Instance.new("UIPadding")
+        gridPadding.PaddingLeft = UDim.new(0, 4)
+        gridPadding.PaddingRight = UDim.new(0, 4)
+        gridPadding.PaddingTop = UDim.new(0, 4)
+        gridPadding.PaddingBottom = UDim.new(0, 4)
+        gridPadding.Parent = gridContainer
+
+        -- Auto-fit cell size to content area width
+        local function updateCellSize()
+            local contentW = contentArea.AbsoluteSize.X - 12 - 8
+            local cellW = math.floor((contentW - 8 * 2) / 3)
+            if cellW < 140 then cellW = 140 end
+            gridLayout.CellSize = UDim2.new(0, cellW, 0, 80)
+        end
+        contentArea:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateCellSize)
+        task.spawn(function() task.wait() updateCellSize() end)
+
+        -- Auto-update canvas size
+        gridLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            local absSize = gridLayout.AbsoluteContentSize
+            gridContainer.CanvasSize = UDim2.new(0, absSize.X, 0, absSize.Y + 8)
+        end)
 
         -- Sidebar button
         local btn = Instance.new("TextButton")
@@ -265,13 +462,13 @@ function guilibrary:CreateWindow(config)
 
         local tabAPI = {
             Name = name,
-            Frame = tabFrame,
+            Frame = gridContainer,
             Button = btn,
-            Layout = tabLayout,
+            Layout = gridLayout,
         }
 
         function tabAPI:CreateToggle(cfg)
-            return guilibrary:_createToggle(tabFrame, cfg, allToggleFrames)
+            return guilibrary:_createToggle(gridContainer, cfg)
         end
 
         btn.MouseButton1Click:Connect(function()
@@ -280,17 +477,22 @@ function guilibrary:CreateWindow(config)
                 p.Button.BackgroundColor3 = theme.section
                 p.Button.TextColor3 = theme.textDim
             end
-            tabFrame.Visible = true
+            gridContainer.Visible = true
             btn.BackgroundColor3 = theme.accent
             btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             currentPage = name
+
+            -- Close settings when switching tabs
+            if settingsPanel.Visible then
+                closeSettings()
+            end
         end)
 
         table.insert(pages, tabAPI)
         Tabs[name] = tabAPI
 
         if not currentPage then
-            tabFrame.Visible = true
+            gridContainer.Visible = true
             btn.BackgroundColor3 = theme.accent
             btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             currentPage = name
@@ -298,18 +500,12 @@ function guilibrary:CreateWindow(config)
 
         guilibrary.ObjectsToSave.Tabs[name] = {
             Name = name,
-            API = { Container = tabFrame },
+            API = { Container = gridContainer },
             Type = "Tab",
         }
 
         return tabAPI
     end
-
-    guilibrary.ObjectsToSave.Tabs["Main"] = {
-        Name = "Main",
-        API = { Container = frame },
-        Type = "Tab",
-    }
 
     -- ██████  KEYBIND HANDLER  ███████████████████████████████████████████████████
 
@@ -318,11 +514,12 @@ function guilibrary:CreateWindow(config)
 
         if keybindListening and input.UserInputType == Enum.UserInputType.Keyboard then
             keybindListening = false
-            for _, toggle in pairs(Keybinds) do
-                if toggle._listening then
-                    toggle:SetKeybind(input.KeyCode)
-                    toggle._listening = false
-                end
+            local toggleAPI = keybindBtn._toggleAPI
+            if toggleAPI then
+                toggleAPI._keybind = input.KeyCode
+                functionKeybinds[toggleAPI] = toggleAPI
+                keybindBtn.Text = input.KeyCode.Name
+                guilibrary:CreateNotification("Keybind", toggleAPI.Name .. " bound to " .. input.KeyCode.Name)
             end
             return
         end
@@ -331,7 +528,7 @@ function guilibrary:CreateWindow(config)
             if input.KeyCode == Enum.KeyCode[guilibrary.GuiKeybind] then
                 guilibrary:Toggle()
             end
-            for _, toggle in pairs(Keybinds) do
+            for _, toggle in pairs(functionKeybinds) do
                 if toggle._keybind and input.KeyCode == toggle._keybind then
                     toggle:Toggle(not toggle._enabled)
                 end
@@ -340,6 +537,181 @@ function guilibrary:CreateWindow(config)
     end)
 
     return guilibrary
+end
+
+-- ██████  FUNCTION CARD / TOGGLE  █████████████████████████████████████████████████
+
+function guilibrary:_createToggle(container, config)
+    config = config or {}
+    local name = config.Name or "Toggle"
+    local hoverText = config.HoverText or ""
+    local callback = config.Callback or config.Function or function() end
+    local default = config.Default or false
+    local enabled = default
+
+    local frame = Instance.new("Frame")
+    frame.Name = "Func_" .. name:gsub("[^%w_]", "")
+    frame.BackgroundColor3 = theme.element
+    frame.BorderSizePixel = 0
+    frame.Parent = container
+
+    local frameCorner = Instance.new("UICorner")
+    frameCorner.CornerRadius = UDim.new(0, 8)
+    frameCorner.Parent = frame
+
+    -- Border stroke (changes color based on toggle state)
+    local frameStroke = Instance.new("UIStroke")
+    frameStroke.Color = enabled and theme.toggleOn or theme.border
+    frameStroke.Thickness = 1.5
+    frameStroke.Parent = frame
+
+    -- Function name label
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -12, 1, -8)
+    label.Position = UDim2.new(0, 6, 0, 4)
+    label.BackgroundTransparency = 1
+    label.Text = name
+    label.TextColor3 = theme.text
+    label.Font = theme.font
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextYAlignment = Enum.TextYAlignment.Top
+    label.Parent = frame
+
+    -- Status indicator (ON/OFF)
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(1, -12, 0, 16)
+    statusLabel.Position = UDim2.new(0, 6, 1, -20)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = enabled and "ON" or "OFF"
+    statusLabel.TextColor3 = enabled and theme.toggleOn or theme.textDim
+    statusLabel.Font = theme.font
+    statusLabel.TextSize = 11
+    statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    statusLabel.Parent = frame
+
+    -- Hidden option container (for child elements - dropdowns/sliders)
+    local hiddenContainer = Instance.new("Frame")
+    hiddenContainer.Name = "Options"
+    hiddenContainer.Size = UDim2.new(1, 0, 0, 0)
+    hiddenContainer.BackgroundTransparency = 1
+    hiddenContainer.Visible = false
+    hiddenContainer.Parent = ScreenGui  -- keep off-screen
+
+    local optionLayout = Instance.new("UIListLayout")
+    optionLayout.Padding = UDim.new(0, 4)
+    optionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    optionLayout.Parent = hiddenContainer
+
+    -- Click button
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, 0, 1, 0)
+    button.BackgroundTransparency = 1
+    button.Text = ""
+    button.BorderSizePixel = 0
+    button.Parent = frame
+
+    local api = {
+        Name = name,
+        GameObject = frame,
+        MainObject = frame,
+        Container = hiddenContainer,
+        _hiddenContainer = hiddenContainer,
+        Enabled = enabled,
+        _enabled = enabled,
+        _keybind = nil,
+        _listening = false,
+        _options = {},
+    }
+
+    function api:Toggle(state, save)
+        state = (state == nil) and not api._enabled or state
+        api._enabled = state
+        api.Enabled = state
+        enabled = state
+
+        frameStroke.Color = state and theme.toggleOn or theme.border
+        statusLabel.Text = state and "ON" or "OFF"
+        statusLabel.TextColor3 = state and theme.toggleOn or theme.textDim
+
+        if state then
+            frame.BackgroundColor3 = Color3.fromRGB(38, 38, 55)
+        else
+            frame.BackgroundColor3 = theme.element
+        end
+    end
+
+    function api:ReToggle(state)
+        api:Toggle(state, true)
+        pcall(callback, state)
+    end
+
+    function api:SetKeybind(keyCode)
+        api._keybind = keyCode
+        functionKeybinds[api] = api
+    end
+
+    -- Left click: toggle
+    button.MouseButton1Click:Connect(function()
+        api:Toggle()
+        pcall(callback, api._enabled)
+    end)
+
+    -- Right click: open settings
+    button.MouseButton2Click:Connect(function()
+        if guilibrary._openSettings then
+            guilibrary._openSettings(api)
+        end
+    end)
+
+    -- Tooltip on hover
+    if hoverText and hoverText ~= "" then
+        button.MouseEnter:Connect(function()
+            tooltip.Visible = true
+            tooltipLabel.Text = hoverText
+            local textSize = TextService:GetTextSize(hoverText, 12, theme.font, Vector2.new(300, 200))
+            tooltip.Size = UDim2.new(0, textSize.X + 20, 0, textSize.Y + 10)
+        end)
+        button.MouseLeave:Connect(function()
+            tooltip.Visible = false
+        end)
+    end
+
+    -- Hover effect
+    button.MouseEnter:Connect(function()
+        if not enabled then
+            frame.BackgroundColor3 = Color3.fromRGB(38, 38, 55)
+        end
+    end)
+    button.MouseLeave:Connect(function()
+        if not enabled then
+            frame.BackgroundColor3 = theme.element
+        end
+    end)
+
+    table.insert(guilibrary.ObjectsToSave.Toggles, {
+        Name = name,
+        API = api,
+        Options = {},
+    })
+
+    -- Sub-element creation
+    function api:CreateDropdown(cfg)
+        cfg.Parent = api
+        return guilibrary:_createDropdown(hiddenContainer, cfg, api)
+    end
+
+    function api:CreateSlider(cfg)
+        cfg.Parent = api
+        return guilibrary:_createSlider(hiddenContainer, cfg, api)
+    end
+
+    function api:CreateToggle(cfg)
+        cfg.Parent = api
+        return guilibrary:_createToggle(hiddenContainer, cfg)
+    end
+
+    return api
 end
 
 -- ██████  TOOLTIP  ████████████████████████████████████████████████████████████████
@@ -372,216 +744,17 @@ tooltipLabel.TextSize = 12
 tooltipLabel.TextXAlignment = Enum.TextXAlignment.Left
 tooltipLabel.Parent = tooltip
 
--- ██████  TOGGLE  █████████████████████████████████████████████████████████████████
-
-function guilibrary:_createToggle(container, config, allToggleFrames)
-    config = config or {}
-    local name = config.Name or "Toggle"
-    local hoverText = config.HoverText or ""
-    local callback = config.Callback or config.Function or function() end
-    local default = config.Default or false
-    local enabled = default
-
-    local frame = Instance.new("Frame")
-    frame.Name = "Toggle_" .. name:gsub("[^%w_]", "")
-    frame.Size = UDim2.new(1, 0, 0, 32)
-    frame.BackgroundColor3 = theme.element
-    frame.BorderSizePixel = 0
-    if container and container:IsA("ScrollingFrame") then
-        frame.Parent = container
-    elseif container then
-        frame.Parent = container
+-- Tooltip follow mouse
+RunService.RenderStepped:Connect(function()
+    if tooltip.Visible then
+        local mPos = UserInputService:GetMouseLocation()
+        tooltip.Position = UDim2.new(0, mPos.X + 16, 0, mPos.Y - 8)
     end
+end)
 
-    if allToggleFrames then
-        table.insert(allToggleFrames, frame)
-    end
+-- ██████  DROPDOWN (child option)  ███████████████████████████████████████████████
 
-    local frameCorner = Instance.new("UICorner")
-    frameCorner.CornerRadius = theme.radius
-    frameCorner.Parent = frame
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -48, 1, 0)
-    label.Position = UDim2.new(0, 10, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = name
-    label.TextColor3 = theme.text
-    label.Font = theme.font
-    label.TextSize = theme.textSize
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = frame
-
-    -- Toggle button
-    local toggleBtn = Instance.new("Frame")
-    toggleBtn.Name = "ToggleBtn"
-    toggleBtn.Size = UDim2.new(0, 36, 0, 20)
-    toggleBtn.Position = UDim2.new(1, -44, 0.5, -10)
-    toggleBtn.BackgroundColor3 = enabled and theme.toggleOn or theme.toggleOff
-    toggleBtn.BorderSizePixel = 0
-    toggleBtn.Parent = frame
-
-    local toggleCorner = Instance.new("UICorner")
-    toggleCorner.CornerRadius = UDim.new(1, 0)
-    toggleCorner.Parent = toggleBtn
-
-    local knob = Instance.new("Frame")
-    knob.Name = "Knob"
-    knob.Size = UDim2.new(0, 16, 0, 16)
-    knob.Position = UDim2.new(enabled and 1 or 0, enabled and -18 or 2, 0.5, -8)
-    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    knob.BorderSizePixel = 0
-    knob.Parent = toggleBtn
-
-    local knobCorner = Instance.new("UICorner")
-    knobCorner.CornerRadius = UDim.new(1, 0)
-    knobCorner.Parent = knob
-
-    -- Option container
-    local optionContainer = Instance.new("Frame")
-    optionContainer.Name = "Options"
-    optionContainer.Size = UDim2.new(1, 0, 0, 0)
-    optionContainer.Position = UDim2.new(0, 0, 0, 32)
-    optionContainer.BackgroundTransparency = 1
-    optionContainer.Visible = enabled
-    optionContainer.Parent = frame
-
-    local optionLayout = Instance.new("UIListLayout")
-    optionLayout.Padding = UDim.new(0, 4)
-    optionLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    optionLayout.Parent = optionContainer
-
-    local optionPadding = Instance.new("UIPadding")
-    optionPadding.PaddingLeft = UDim.new(0, 16)
-    optionPadding.PaddingRight = UDim.new(0, 4)
-    optionPadding.Parent = optionContainer
-
-    local function updateSize()
-        local totalH = 32
-        if enabled then
-            local contentY = optionLayout.AbsoluteContentSize.Y
-            if contentY > 0 then
-                totalH = totalH + contentY
-            end
-        end
-        frame.Size = UDim2.new(1, 0, 0, totalH)
-    end
-
-    optionLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateSize)
-
-    local api = {
-        Name = name,
-        GameObject = frame,
-        MainObject = frame,
-        Container = optionContainer,
-        Enabled = enabled,
-        _keybind = nil,
-        _enabled = enabled,
-        _listening = false,
-    }
-
-    function api:Toggle(state, save)
-        state = (state == nil) and not api._enabled or state
-        api._enabled = state
-        api.Enabled = state
-        enabled = state
-
-        toggleBtn.BackgroundColor3 = state and theme.toggleOn or theme.toggleOff
-        knob:TweenPosition(
-            UDim2.new(state and 1 or 0, state and -18 or 2, 0.5, -8),
-            Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true
-        )
-
-        optionContainer.Visible = state
-        updateSize()
-    end
-
-    function api:ReToggle(state)
-        api:Toggle(state, true)
-        pcall(callback, state)
-    end
-
-    function api:SetKeybind(keyCode)
-        api._keybind = keyCode
-        Keybinds[api] = api
-    end
-
-    -- Mouse click area
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, 0, 1, 0)
-    button.BackgroundTransparency = 1
-    button.Text = ""
-    button.BorderSizePixel = 0
-    button.Parent = frame
-
-    button.MouseButton1Click:Connect(function()
-        api:Toggle()
-        pcall(callback, api._enabled)
-    end)
-
-    -- Tooltip on hover
-    if hoverText and hoverText ~= "" then
-        button.MouseEnter:Connect(function()
-            tooltip.Visible = true
-            tooltipLabel.Text = hoverText
-            local textSize = TextService:GetTextSize(hoverText, 12, theme.font, Vector2.new(300, 200))
-            tooltip.Size = UDim2.new(0, textSize.X + 20, 0, textSize.Y + 10)
-        end)
-        button.MouseLeave:Connect(function()
-            tooltip.Visible = false
-        end)
-        RunService.RenderStepped:Connect(function()
-            if tooltip.Visible then
-                local mPos = UserInputService:GetMouseLocation()
-                tooltip.Position = UDim2.new(0, mPos.X + 16, 0, mPos.Y - 8)
-            end
-        end)
-    end
-
-    -- RIGHT CLICK (ПКМ) for keybind
-    button.MouseButton2Click:Connect(function()
-        if api._keybind then
-            Keybinds[api] = nil
-            api._keybind = nil
-            guilibrary:CreateNotification("Keybind", name .. " keybind removed")
-        else
-            api._listening = true
-            keybindListening = true
-            guilibrary:CreateNotification("Keybind", "Press a key to bind " .. name)
-        end
-    end)
-
-    frame:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateSize)
-    task.spawn(function() task.wait() updateSize() end)
-
-    table.insert(guilibrary.ObjectsToSave.Toggles, {
-        Name = name,
-        API = api,
-        Options = {},
-    })
-
-    -- Sub-element creation
-    function api:CreateDropdown(cfg)
-        cfg.Parent = api
-        return guilibrary:_createDropdown(optionContainer, cfg)
-    end
-
-    function api:CreateSlider(cfg)
-        cfg.Parent = api
-        return guilibrary:_createSlider(optionContainer, cfg)
-    end
-
-    function api:CreateToggle(cfg)
-        cfg.Parent = api
-        return guilibrary:_createToggle(optionContainer, cfg)
-    end
-
-    return api
-end
-
--- ██████  DROPDOWN  ███████████████████████████████████████████████████████████████
-
-function guilibrary:_createDropdown(container, config)
+function guilibrary:_createDropdown(container, config, parentToggle)
     config = config or {}
     local name = config.Name or "Dropdown"
     local list = config.List or {}
@@ -608,7 +781,7 @@ function guilibrary:_createDropdown(container, config)
     btn.Text = name .. " [" .. tostring(value) .. "]"
     btn.TextColor3 = theme.text
     btn.Font = theme.font
-    btn.TextSize = theme.textSize
+    btn.TextSize = 13
     btn.TextXAlignment = Enum.TextXAlignment.Left
     btn.BorderSizePixel = 0
     btn.AutoButtonColor = false
@@ -660,6 +833,7 @@ function guilibrary:_createDropdown(container, config)
             value = opt
             btn.Text = name .. " [" .. tostring(opt) .. "]"
             pcall(callback, opt)
+            -- Close dropdown after selection
             open = true
             btn.MouseButton1Click:Fire()
         end)
@@ -693,12 +867,21 @@ function guilibrary:_createDropdown(container, config)
         api:Select(v)
     end
 
+    -- Store in parent toggle's options
+    if parentToggle and parentToggle._options then
+        table.insert(parentToggle._options, {
+            type = "Dropdown",
+            api = api,
+            name = name,
+        })
+    end
+
     return api
 end
 
--- ██████  SLIDER  █████████████████████████████████████████████████████████████████
+-- ██████  SLIDER (child option)  ██████████████████████████████████████████████████
 
-function guilibrary:_createSlider(container, config)
+function guilibrary:_createSlider(container, config, parentToggle)
     config = config or {}
     local name = config.Name or "Slider"
     local min = config.Min or 0
@@ -727,7 +910,7 @@ function guilibrary:_createSlider(container, config)
     label.Text = name
     label.TextColor3 = theme.text
     label.Font = theme.font
-    label.TextSize = theme.textSize
+    label.TextSize = 13
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = frame
 
@@ -803,7 +986,8 @@ function guilibrary:_createSlider(container, config)
         end
     end)
 
-    UserInputService.InputChanged:Connect(function(input)
+    local inputChanged
+    inputChanged = UserInputService.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             update(input.Position.X)
         end
@@ -823,6 +1007,15 @@ function guilibrary:_createSlider(container, config)
         fill.Size = UDim2.new((v - min) / (max - min), 0, 1, 0)
         valueLabel.Text = tostring(v)
         pcall(callback, v)
+    end
+
+    -- Store in parent toggle's options
+    if parentToggle and parentToggle._options then
+        table.insert(parentToggle._options, {
+            type = "Slider",
+            api = api,
+            name = name,
+        })
     end
 
     return api
@@ -885,7 +1078,6 @@ function guilibrary:CreateNotification(title, text, duration)
 
     local textSize = TextService:GetTextSize(text, 11, theme.font, Vector2.new(256, 1000))
     local totalH = math.max(textSize.Y + 36, 50)
-    frame.Size = UDim2.new(0, 280, 0, 0)
 
     local y = -10
     for _, child in pairs(notifHolder:GetChildren()) do
@@ -936,6 +1128,12 @@ function guilibrary:LoadConfig()
                         local api = entry.API
                         if state.Enabled ~= nil and api.Toggle then
                             api:Toggle(state.Enabled, true)
+                        end
+                        if state.Keybind then
+                            api._keybind = Enum.KeyCode[state.Keybind]
+                            if api._keybind then
+                                functionKeybinds[api] = api
+                            end
                         end
                         break
                     end
